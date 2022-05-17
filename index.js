@@ -56,7 +56,7 @@ async function run(){
     })
 
     //deleting a product
-    app.delete('/product/:id', async (req, res) => {
+    app.delete('/products/:id', async (req, res) => {
         const id = req.params.id;
         const query = { _id: ObjectId(id) };
         const result = await productCollection.deleteOne(query);
@@ -64,45 +64,46 @@ async function run(){
     })
 
     //adding a product
-    app.post("/add-product", async (req, res) => {
+    // app.post("/add-product", async (req, res) => {
+    app.post("/products", async (req, res) => {
         const bikeInfo = req.body;
         const result = await productCollection.insertOne(bikeInfo);
         res.send(result);
     })
 
     // jwt token while logging in
-    // app.post("/login", (req, res) => {
-    //     const user = req.body;
-    //     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
-    //     res.send({ token })
-    // })
-
-    //add to order
-    app.post("/add-order", async (req, res) => {
-        const orderInfo = req.body;//=> ...bike, email
-        const result = await orderCollection.insertOne(orderInfo);
-        res.send({ success: 'order complete' })
+    app.post("/login", (req, res) => {
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+        res.send({ token })
     })
 
-    //order list
-    // app.get("/order-list", verifyToken, async (req, res) => {
-    //     const decodedEmail = req.decoded.email;
-    //     const email = req.query.email;
-    //     if (decodedEmail === email) {
-    //         const orders = await orderCollection.find({ email }).toArray();
-    //         res.send(orders);
-    //     } else {
-    //         res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
-    //     }
+    //add to order
+    // app.post("/add-order", async (req, res) => {
+    //     const orderInfo = req.body;//=> ...bike, email
+    //     const result = await orderCollection.insertOne(orderInfo);
+    //     res.send({ success: 'order complete' })
     // })
 
+    //order list
+    app.get("/order-list", verifyToken, async (req, res) => {
+        const decodedEmail = req.decoded.email;
+        const email = req.query.email;
+        if (decodedEmail === email) {
+            const orders = await orderCollection.find({ email }).toArray();
+            res.send(orders);
+        } else {
+            res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
+        }
+    })
+
     // delete from order
-    // app.delete('/order-list/:id', async (req, res) => {
-    //     const id = req.params.id;
-    //     const query = { _id: ObjectId(id) };
-    //     const result = await orderCollection.deleteOne(query);
-    //     res.send(result);
-    // })
+    app.delete('/order-list/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const result = await orderCollection.deleteOne(query);
+        res.send(result);
+    })
 
 } finally {
     //   await client.close();
