@@ -4,17 +4,38 @@ require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { config } = require('dotenv');
 const app = express();
-// const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 const port = process.env.PORT || 5000;
 
-// use middleware
+// Middleware
 app.use(cors());
 app.use(express.json());
 
 // Database connection
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zlmws.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+// verify token function
+function verifyToken(req, res, next) {
+    //getting token from header
+    const tokenInfo = req.headers.authorization;
+    const token = tokenInfo?.split(" ")[1];
+    if (!tokenInfo) {
+        return res.status(401).send({ message: 'Unauthorized request' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+
+        if (err) {
+            return res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
+
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
+
 
 async function run(){
   try {
@@ -28,7 +49,7 @@ async function run(){
     app.get("/products", async (req, res) => {
         const query = {};
         const products = await productCollection.find(query).toArray();
-        console.log('inside products ->', products);
+        // console.log('inside products ->', products);
         res.send(products);
     });
 
@@ -76,14 +97,14 @@ async function run(){
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
         res.send({ token })
-    })
+    });
 
     //add to order
-    // app.post("/add-order", async (req, res) => {
-    //     const orderInfo = req.body;//=> ...bike, email
-    //     const result = await orderCollection.insertOne(orderInfo);
-    //     res.send({ success: 'order complete' })
-    // })
+    app.post("/add-order", async (req, res) => {
+        const orderInfo = req.body;//=> ...bike, email
+        const result = await orderCollection.insertOne(orderInfo);
+        res.send({ success: 'order complete' })
+    })
 
     //order list
     app.get("/order-list", verifyToken, async (req, res) => {
@@ -113,7 +134,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Ragib Perfume Inventory Server...');
+    res.send('Ragib Perfume Inventory Server Running...');
 });
 
 app.listen(port, ()=>{
